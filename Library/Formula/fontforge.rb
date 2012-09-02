@@ -7,15 +7,15 @@ class Fontforge < Formula
 
   head 'https://github.com/fontforge/fontforge.git'
 
-  depends_on 'pkg-config' => :build
+  option 'without-python', 'Build without Python'
+  option 'with-x', 'Build with X'
+
   depends_on 'gettext'
-  depends_on 'pango'
-  depends_on 'potrace'
-  depends_on 'libspiro'
-  depends_on :x11
   depends_on :xcode # Because: #include </Developer/Headers/FlatCarbon/Files.h>
 
-  option 'without-python', 'Build without Python'
+  if build.include? "with-x"
+    depends_on :x11
+  end
 
   fails_with :llvm do
     build 2336
@@ -88,8 +88,12 @@ class Fontforge < Formula
     "python" + `python -c 'import sys;print(sys.version[:3])'`.strip
   end
 
+  def test
+    system "#{bin}/fontforge", "-version"
+  end
+
   def caveats
-    general_caveats = <<-EOS.undent
+    x_caveats = <<-EOS.undent
       fontforge is an X11 application.
 
       To install the Mac OS X wrapper application run:
@@ -105,7 +109,8 @@ class Fontforge < Formula
         export PYTHONPATH=#{HOMEBREW_PREFIX}/lib/#{which_python}/site-packages:$PYTHONPATH
     EOS
 
-    s = general_caveats
+    s = ""
+    s += x_caveats if build.include? "with-x"
     s += python_caveats unless build.include? "without-python"
     return s
   end
